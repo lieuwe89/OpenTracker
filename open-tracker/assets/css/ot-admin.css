@@ -1,0 +1,265 @@
+/**
+ * OpenTracker — Admin Dashboard Styles
+ *
+ * @package OpenTracker
+ */
+
+/* ---- Layout ---- */
+.ot-dashboard {
+	max-width: 1200px;
+	margin: 20px auto;
+	padding: 0 20px;
+}
+
+/* ---- Header ---- */
+.ot-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 24px;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.ot-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 24px;
+	font-weight: 600;
+	color: #1e293b;
+	margin: 0;
+}
+
+.ot-title .dashicons {
+	font-size: 28px;
+	width: 28px;
+	height: 28px;
+	color: #3b82f6;
+}
+
+/* ---- Date Filter ---- */
+.ot-date-filter {
+	display: flex;
+	gap: 4px;
+	background: #f1f5f9;
+	border-radius: 8px;
+	padding: 4px;
+}
+
+.ot-filter-btn {
+	padding: 6px 16px;
+	border-radius: 6px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #64748b;
+	text-decoration: none;
+	transition: all 0.2s ease;
+}
+
+.ot-filter-btn:hover {
+	background: #e2e8f0;
+	color: #334155;
+	text-decoration: none;
+}
+
+.ot-filter-btn.active {
+	background: #fff;
+	color: #1e293b;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ---- Stat Cards ---- */
+.ot-stat-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.ot-card {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 20px;
+	transition: box-shadow 0.2s ease;
+}
+
+.ot-card:hover {
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.ot-card-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 10px;
+	flex-shrink: 0;
+}
+
+.ot-card-icon .dashicons {
+	font-size: 22px;
+	width: 22px;
+	height: 22px;
+}
+
+.ot-card-value {
+	font-size: 26px;
+	font-weight: 700;
+	color: #1e293b;
+	line-height: 1.2;
+}
+
+.ot-card-label {
+	font-size: 13px;
+	color: #64748b;
+	margin-top: 2px;
+}
+
+/* ---- Sections ---- */
+.ot-section {
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 24px;
+	margin-bottom: 20px;
+}
+
+.ot-section-title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 16px;
+	font-weight: 600;
+	color: #1e293b;
+	margin: 0 0 16px 0;
+	padding: 0;
+}
+
+.ot-section-title .dashicons {
+	color: #3b82f6;
+}
+
+/* ---- Chart ---- */
+.ot-chart-container {
+	position: relative;
+	height: 300px;
+	width: 100%;
+}
+
+/* ---- Grid ---- */
+.ot-grid-2 {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 20px;
+}
+
+@media (max-width: 782px) {
+	.ot-grid-2 {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ---- Tables ---- */
+.ot-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.ot-table th {
+	text-align: left;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #94a3b8;
+	padding: 8px 12px;
+	border-bottom: 2px solid #f1f5f9;
+}
+
+.ot-table td {
+	padding: 10px 12px;
+	font-size: 14px;
+	color: #334155;
+	border-bottom: 1px solid #f1f5f9;
+}
+
+.ot-table tbody tr:hover {
+	background: #f8fafc;
+}
+
+.ot-table .ot-num {
+	text-align: right;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.ot-rank {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	border-radius: 6px;
+	background: #f1f5f9;
+	font-size: 11px;
+	font-weight: 600;
+	color: #64748b;
+	margin-right: 8px;
+}
+
+/* ---- Uptime Timeline ---- */
+.ot-uptime-timeline {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 3px;
+	padding: 4px 0;
+}
+
+.ot-uptime-dot {
+	display: inline-block;
+	width: 12px;
+	height: 28px;
+	border-radius: 3px;
+	transition: transform 0.15s ease;
+	cursor: default;
+}
+
+.ot-uptime-dot:hover {
+	transform: scaleY(1.3);
+}
+
+.ot-uptime-dot.up {
+	background: #22c55e;
+}
+
+.ot-uptime-dot.down {
+	background: #ef4444;
+}
+
+/* ---- Status Badge ---- */
+.ot-status-badge {
+	display: inline-block;
+	padding: 2px 10px;
+	border-radius: 20px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.ot-status-badge.down {
+	background: #fef2f2;
+	color: #dc2626;
+}
+
+/* ---- Empty State ---- */
+.ot-empty {
+	text-align: center;
+	color: #94a3b8;
+	font-size: 14px;
+	padding: 32px 16px;
+}

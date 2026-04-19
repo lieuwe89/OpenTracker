@@ -1,0 +1,52 @@
+<?php
+/**
+ * Plugin Name: OpenTracker
+ * Plugin URI:  https://github.com/lieuwejongsma/OpenTracker
+ * Description: Local analytics & uptime monitor. Tracks visits, page views, user retention, and website uptime — all data stored locally.
+ * Version:     1.0.0
+ * Author:      Lieuwe Jongsma
+ * License:     GPL-2.0-or-later
+ * Text Domain: open-tracker
+ *
+ * @package OpenTracker
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+// --- Constants ---
+define( 'OT_VERSION', '1.0.0' );
+define( 'OT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'OT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+
+// --- Load classes ---
+require_once OT_PLUGIN_DIR . 'includes/class-ot-database.php';
+require_once OT_PLUGIN_DIR . 'includes/class-ot-rest-api.php';
+require_once OT_PLUGIN_DIR . 'includes/class-ot-tracker.php';
+require_once OT_PLUGIN_DIR . 'includes/class-ot-stats.php';
+require_once OT_PLUGIN_DIR . 'includes/class-ot-admin.php';
+require_once OT_PLUGIN_DIR . 'includes/class-ot-uptime.php';
+require_once OT_PLUGIN_DIR . 'includes/class-ot-reports.php';
+require_once OT_PLUGIN_DIR . 'includes/class-ot-plugin.php';
+
+// --- Activation ---
+register_activation_hook( __FILE__, function () {
+	OT_Database::install();
+	OT_Uptime::schedule();
+	OT_Reports::schedule();
+} );
+
+// --- Deactivation ---
+register_deactivation_hook( __FILE__, function () {
+	OT_Uptime::unschedule();
+	OT_Reports::unschedule();
+} );
+
+// --- Register the monthly cron schedule ---
+add_filter( 'cron_schedules', array( 'OT_Reports', 'add_cron_schedule' ) );
+
+// --- Boot ---
+add_action( 'plugins_loaded', function () {
+	new OT_Plugin();
+} );
