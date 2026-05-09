@@ -51,3 +51,14 @@ add_filter( 'cron_schedules', array( 'OT_Uptime', 'add_cron_schedule' ) );
 add_action( 'plugins_loaded', function () {
 	new OT_Plugin();
 } );
+
+// --- GitHub auto-updates via plugin-update-checker ---
+require_once OT_PLUGIN_DIR . 'vendor/plugin-update-checker/plugin-update-checker.php';
+
+$ot_update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+	'https://github.com/lieuwe89/OpenTracker/',
+	__FILE__,
+	'open-tracker'
+);
+$ot_update_checker->setBranch( 'main' );
+$ot_update_checker->getVcsApi()->enableReleaseAssets();

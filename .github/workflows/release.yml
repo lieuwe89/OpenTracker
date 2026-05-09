@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build plugin zip
+        run: |
+          mkdir -p build
+          cp -r open-tracker build/
+          # Strip development files from the vendored library.
+          rm -rf build/open-tracker/vendor/plugin-update-checker/.github \
+                 build/open-tracker/vendor/plugin-update-checker/examples \
+                 build/open-tracker/vendor/plugin-update-checker/README.md \
+                 build/open-tracker/vendor/plugin-update-checker/composer.json
+          cd build && zip -r ../open-tracker.zip open-tracker
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: open-tracker.zip
+          generate_release_notes: true
