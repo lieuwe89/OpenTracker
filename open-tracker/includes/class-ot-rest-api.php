@@ -35,7 +35,7 @@ class OT_REST_API {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'handle_hit' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'check_permission' ),
 				'args'                => array(
 					'page_url' => array(
 						'required'          => true,
@@ -56,7 +56,7 @@ class OT_REST_API {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'handle_heartbeat' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'check_permission' ),
 				'args'                => array(
 					'visit_id' => array(
 						'required'          => true,
@@ -65,6 +65,41 @@ class OT_REST_API {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Permission callback for tracking endpoints.
+	 *
+	 * Validates the REST nonce sent by the front-end tracker script and
+	 * applies a per-IP rate limit to prevent flooding.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return bool|WP_Error
+	 */
+	public function check_permission( $request ) {
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error(
+				'ot_invalid_nonce',
+				__( 'Invalid or missing nonce.', 'open-tracker' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		// Rate limit: max 60 requests per minute per anonymised IP.
+		$ip_hash   = OT_Database::anonymise_ip( $this->get_client_ip() );
+		$key       = 'ot_rl_' . $ip_hash;
+		$count     = (int) get_transient( $key );
+		if ( $count >= 60 ) {
+			return new WP_Error(
+				'ot_rate_limited',
+				__( 'Rate limit exceeded.', 'open-tracker' ),
+				array( 'status' => 429 )
+			);
+		}
+		set_transient( $key, $count + 1, MINUTE_IN_SECONDS );
+
+		return true;
 	}
 
 	/**
@@ -127,19 +162,22 @@ class OT_REST_API {
 
 		$visit_id = $request->get_param( 'visit_id' );
 
-		// Verify the visit exists.
+		// Verify the visit exists AND was created recently. The recency
+		// window prevents enumeration attacks against historical visit IDs.
 		$table_visits = $wpdb->prefix . 'ot_visits';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$exists = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT id FROM {$table_visits} WHERE id = %d",
+				"SELECT id FROM {$table_visits}
+				WHERE id = %d
+				  AND created_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 2 HOUR)",
 				$visit_id
 			)
 		);
 
 		if ( ! $exists ) {
 			return new WP_REST_Response(
-				array( 'error' => 'Invalid visit ID.' ),
+				array( 'error' => 'Invalid or expired visit ID.' ),
 				404
 			);
 		}

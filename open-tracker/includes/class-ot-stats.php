@@ -232,13 +232,128 @@ class OT_Stats {
 
 		$table = $wpdb->prefix . 'ot_uptime_checks';
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.PreparedSQL.NotPrepared -- No user-supplied parameters; table name is hardcoded with the WP prefix.
 		return $wpdb->get_results(
-			"SELECT status_code, checked_at
-			FROM {$table}
-			WHERE checked_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 24 HOUR)
-			ORDER BY checked_at ASC"
+			$wpdb->prepare(
+				"SELECT status_code, checked_at
+				FROM {$table}
+				WHERE checked_at >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL %d HOUR)
+				ORDER BY checked_at ASC",
+				24
+			)
 		);
+	}
+
+	/**
+	 * Get total visits within an absolute date range.
+	 *
+	 * @param string $start Start datetime (UTC, MySQL format).
+	 * @param string $end   End datetime (UTC, MySQL format).
+	 * @return int
+	 */
+	public function get_total_visits_range( $start, $end ) {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'ot_visits';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE created_at >= %s AND created_at <= %s",
+				$start,
+				$end
+			)
+		);
+	}
+
+	/**
+	 * Get unique visitors within an absolute date range.
+	 *
+	 * @param string $start Start datetime (UTC, MySQL format).
+	 * @param string $end   End datetime (UTC, MySQL format).
+	 * @return int
+	 */
+	public function get_unique_visitors_range( $start, $end ) {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'ot_visits';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(DISTINCT ip_hash) FROM {$table} WHERE created_at >= %s AND created_at <= %s",
+				$start,
+				$end
+			)
+		);
+	}
+
+	/**
+	 * Get average retention (seconds) within an absolute date range.
+	 *
+	 * @param string $start Start datetime (UTC, MySQL format).
+	 * @param string $end   End datetime (UTC, MySQL format).
+	 * @return int
+	 */
+	public function get_avg_retention_range( $start, $end ) {
+		global $wpdb;
+
+		$visits_table     = $wpdb->prefix . 'ot_visits';
+		$heartbeats_table = $wpdb->prefix . 'ot_heartbeats';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$avg_beats = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT AVG(beat_count) FROM (
+					SELECT v.id, COUNT(h.id) AS beat_count
+					FROM {$visits_table} v
+					LEFT JOIN {$heartbeats_table} h ON h.visit_id = v.id
+					WHERE v.created_at >= %s AND v.created_at <= %s
+					GROUP BY v.id
+				) AS sub",
+				$start,
+				$end
+			)
+		);
+
+		return (int) round( floatval( $avg_beats ) * 15 );
+	}
+
+	/**
+	 * Get uptime percentage within an absolute date range.
+	 *
+	 * @param string $start Start datetime (UTC, MySQL format).
+	 * @param string $end   End datetime (UTC, MySQL format).
+	 * @return float Percentage (0–100).
+	 */
+	public function get_uptime_percentage_range( $start, $end ) {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'ot_uptime_checks';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE checked_at >= %s AND checked_at <= %s",
+				$start,
+				$end
+			)
+		);
+
+		if ( 0 === $total ) {
+			return 100.0;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$ok = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE checked_at >= %s AND checked_at <= %s AND status_code = 200",
+				$start,
+				$end
+			)
+		);
+
+		return round( ( $ok / $total ) * 100, 1 );
 	}
 
 	/**

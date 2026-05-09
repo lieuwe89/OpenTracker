@@ -24,8 +24,10 @@ class OT_Tracker {
 	 * Enqueue the lightweight tracking script on the front-end.
 	 */
 	public function enqueue_tracking_script() {
-		// Don't track logged-in admins.
-		if ( current_user_can( 'manage_options' ) ) {
+		// Don't track any logged-in user (admin, editor, author, etc.) so
+		// internal staff traffic doesn't pollute analytics. Sites that want
+		// the previous behaviour can short-circuit this filter.
+		if ( apply_filters( 'ot_skip_tracking_for_user', is_user_logged_in() ) ) {
 			return;
 		}
 

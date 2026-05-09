@@ -22,17 +22,19 @@ class OT_Uptime {
 	 * Initialise hooks.
 	 */
 	public function __construct() {
-		add_filter( 'cron_schedules', array( $this, 'add_cron_schedule' ) );
 		add_action( self::CRON_HOOK, array( $this, 'run_check' ) );
 	}
 
 	/**
 	 * Register a custom 5-minute cron schedule.
 	 *
+	 * Registered at top level of open-tracker.php so the schedule exists
+	 * during the activation hook.
+	 *
 	 * @param array $schedules Existing schedules.
 	 * @return array
 	 */
-	public function add_cron_schedule( $schedules ) {
+	public static function add_cron_schedule( $schedules ) {
 		$schedules['every_five_minutes'] = array(
 			'interval' => 300,
 			'display'  => __( 'Every Five Minutes', 'open-tracker' ),

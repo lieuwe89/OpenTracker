@@ -77,12 +77,12 @@ class OT_Reports {
 		$month_start   = $report_month . '-01 00:00:00';
 		$month_end     = gmdate( 'Y-m-t 23:59:59', strtotime( $month_start ) );
 
-		// --- Summary stats ---
-		$total_visits      = $stats->get_total_visits( 30 );
-		$unique_visitors   = $stats->get_unique_visitors( 30 );
-		$avg_retention     = $stats->get_avg_retention( 30 );
+		// --- Summary stats for the previous calendar month ---
+		$total_visits      = $stats->get_total_visits_range( $month_start, $month_end );
+		$unique_visitors   = $stats->get_unique_visitors_range( $month_start, $month_end );
+		$avg_retention     = $stats->get_avg_retention_range( $month_start, $month_end );
 		$avg_retention_fmt = OT_Stats::format_duration( $avg_retention );
-		$uptime_pct        = $stats->get_uptime_percentage( 30 );
+		$uptime_pct        = $stats->get_uptime_percentage_range( $month_start, $month_end );
 
 		// --- Generate CSV ---
 		$csv_path = $this->generate_csv( $month_start, $month_end );
@@ -112,10 +112,11 @@ class OT_Reports {
 
 		$sent = wp_mail( $admin_email, $subject, $body, $headers, $attachments );
 
-		// --- If sent, clean up old data ---
-		if ( $sent ) {
-			$this->cleanup_old_data();
+		// Always clean up old data — retention policy must hold even if mail
+		// delivery fails (e.g., misconfigured SMTP), or the tables grow forever.
+		$this->cleanup_old_data();
 
+		if ( $sent ) {
 			// Record in reports table.
 			$wpdb->insert(
 				$wpdb->prefix . 'ot_monthly_reports',
@@ -164,15 +165,16 @@ class OT_Reports {
 			return false;
 		}
 
-		// Ensure directory exists.
-		$upload_dir = wp_upload_dir();
-		$dir        = $upload_dir['basedir'] . '/open-tracker/';
+		// Write the CSV to the system temp directory (typically outside the
+		// webroot). Use a random filename so the URL cannot be guessed even
+		// if the location is ever exposed.
+		$dir = trailingslashit( get_temp_dir() );
 
-		if ( ! file_exists( $dir ) ) {
-			wp_mkdir_p( $dir );
-		}
-
-		$filename = 'report-' . gmdate( 'Y-m', strtotime( $start ) ) . '.csv';
+		$filename = sprintf(
+			'ot-report-%s-%s.csv',
+			gmdate( 'Y-m', strtotime( $start ) ),
+			wp_generate_password( 16, false )
+		);
 		$filepath = $dir . $filename;
 
 		$fp = fopen( $filepath, 'w' );
