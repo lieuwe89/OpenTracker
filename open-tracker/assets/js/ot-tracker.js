@@ -8,8 +8,34 @@
 (function () {
 	'use strict';
 
-	var data = window.otTrackerData;
-	if ( ! data || ! data.restUrl ) {
+	function getCurrentScript() {
+		if ( document.currentScript ) {
+			return document.currentScript;
+		}
+
+		var scripts = document.getElementsByTagName( 'script' );
+		return scripts.length ? scripts[ scripts.length - 1 ] : null;
+	}
+
+	function getTrackerData() {
+		var localizedData = window.otTrackerData || {};
+		var script = getCurrentScript();
+		var restUrl = localizedData.restUrl || '';
+
+		if ( ! restUrl && script && script.getAttribute ) {
+			restUrl = script.getAttribute( 'data-ot-rest-url' ) || '';
+		}
+
+		return {
+			restUrl: restUrl ? restUrl.replace( /\/+$/, '' ) : '',
+			nonce: localizedData.nonce || '',
+			pageUrl: localizedData.pageUrl || window.location.href,
+			referrer: typeof localizedData.referrer === 'string' ? localizedData.referrer : document.referrer
+		};
+	}
+
+	var data = getTrackerData();
+	if ( ! data.restUrl ) {
 		return;
 	}
 
@@ -24,7 +50,9 @@
 		var xhr = new XMLHttpRequest();
 		xhr.open( 'POST', data.restUrl + '/' + endpoint, true );
 		xhr.setRequestHeader( 'Content-Type', 'application/json' );
-		xhr.setRequestHeader( 'X-WP-Nonce', data.nonce );
+		if ( data.nonce ) {
+			xhr.setRequestHeader( 'X-WP-Nonce', data.nonce );
+		}
 
 		xhr.onreadystatechange = function () {
 			if ( xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300 ) {

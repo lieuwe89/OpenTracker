@@ -28,6 +28,7 @@ class OT_Plugin {
 		// Admin dashboard.
 		if ( is_admin() ) {
 			new OT_Admin();
+			new OT_Settings();
 		}
 
 		// Cron-based components (always need hooks registered).

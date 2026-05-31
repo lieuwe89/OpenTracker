@@ -111,7 +111,12 @@ $current_url = admin_url( 'admin.php?page=open-tracker' );
 									<span class="ot-rank"><?php echo esc_html( $i + 1 ); ?></span>
 									<?php
 									$parsed = wp_parse_url( $page->page_url );
-									echo esc_html( isset( $parsed['path'] ) ? $parsed['path'] : $page->page_url );
+									if ( isset( $parsed['host'] ) ) {
+										$path = isset( $parsed['path'] ) ? $parsed['path'] : '/';
+										echo esc_html( $parsed['host'] . $path );
+									} else {
+										echo esc_html( isset( $parsed['path'] ) ? $parsed['path'] : $page->page_url );
+									}
 									?>
 								</td>
 								<td class="ot-num"><?php echo esc_html( number_format( $page->visit_count ) ); ?></td>

@@ -23,6 +23,7 @@ class OT_REST_API {
 	 */
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_filter( 'rest_pre_serve_request', array( $this, 'send_cors_headers' ), 10, 4 );
 	}
 
 	/**
@@ -78,7 +79,11 @@ class OT_REST_API {
 	 */
 	public function check_permission( $request ) {
 		$nonce = $request->get_header( 'X-WP-Nonce' );
-		if ( ! $nonce || ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+		if ( $nonce && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return $this->check_rate_limit();
+		}
+
+		if ( ! $this->is_hit_request( $request ) && ! $this->is_heartbeat_request( $request ) ) {
 			return new WP_Error(
 				'ot_invalid_nonce',
 				__( 'Invalid or missing nonce.', 'open-tracker' ),
@@ -86,6 +91,20 @@ class OT_REST_API {
 			);
 		}
 
+		$external_permission = $this->check_external_permission( $request );
+		if ( $external_permission instanceof WP_Error ) {
+			return $external_permission;
+		}
+
+		return $this->check_rate_limit();
+	}
+
+	/**
+	 * Apply rate limiting for accepted tracking requests.
+	 *
+	 * @return bool|WP_Error
+	 */
+	private function check_rate_limit() {
 		// Rate limit: max 60 requests per minute per anonymised IP.
 		$ip_hash   = OT_Database::anonymise_ip( $this->get_client_ip() );
 		$key       = 'ot_rl_' . $ip_hash;
@@ -100,6 +119,100 @@ class OT_REST_API {
 		set_transient( $key, $count + 1, MINUTE_IN_SECONDS );
 
 		return true;
+	}
+
+	/**
+	 * Check whether a request is allowed through external static-site tracking.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return bool|WP_Error
+	 */
+	private function check_external_permission( $request ) {
+		$origin = OT_External_Tracking::get_request_origin();
+		if ( ! OT_External_Tracking::is_allowed_origin( $origin ) ) {
+			return new WP_Error(
+				'ot_invalid_origin',
+				__( 'External tracking origin is not allowed.', 'open-tracker' ),
+				array( 'status' => 403 )
+			);
+		}
+
+		if ( $this->is_options_request( $request ) ) {
+			return true;
+		}
+
+		if ( $this->is_hit_request( $request ) ) {
+			$page_url = (string) $request->get_param( 'page_url' );
+			if ( ! OT_External_Tracking::is_allowed_page_url( $page_url, $origin ) ) {
+				return new WP_Error(
+					'ot_invalid_page_url',
+					__( 'Tracked page URL is not allowed for this origin.', 'open-tracker' ),
+					array( 'status' => 403 )
+				);
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check whether the request targets the page hit endpoint.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return bool
+	 */
+	private function is_hit_request( $request ) {
+		return method_exists( $request, 'get_route' )
+			&& '/' . self::NAMESPACE . '/hit' === $request->get_route();
+	}
+
+	/**
+	 * Check whether the request targets the heartbeat endpoint.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return bool
+	 */
+	private function is_heartbeat_request( $request ) {
+		return method_exists( $request, 'get_route' )
+			&& '/' . self::NAMESPACE . '/heartbeat' === $request->get_route();
+	}
+
+	/**
+	 * Check whether the request is a CORS preflight request.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return bool
+	 */
+	private function is_options_request( $request ) {
+		return method_exists( $request, 'get_method' )
+			&& 'OPTIONS' === strtoupper( $request->get_method() );
+	}
+
+	/**
+	 * Add CORS headers for approved external tracker origins.
+	 *
+	 * @param bool            $served  Whether the request has already been served.
+	 * @param WP_HTTP_Response $result  Result to send to the client.
+	 * @param WP_REST_Request $request The request object.
+	 * @param WP_REST_Server  $server  Server instance.
+	 * @return bool
+	 */
+	public function send_cors_headers( $served, $result, $request, $server ) {
+		if ( ! method_exists( $request, 'get_route' ) || 0 !== strpos( $request->get_route(), '/' . self::NAMESPACE . '/' ) ) {
+			return $served;
+		}
+
+		$origin = OT_External_Tracking::get_request_origin();
+		if ( ! OT_External_Tracking::is_allowed_origin( $origin ) ) {
+			return $served;
+		}
+
+		header( 'Access-Control-Allow-Origin: ' . $origin, true );
+		header( 'Access-Control-Allow-Methods: POST, OPTIONS', true );
+		header( 'Access-Control-Allow-Headers: Content-Type, X-WP-Nonce', true );
+		header( 'Vary: Origin', false );
+
+		return $served;
 	}
 
 	/**

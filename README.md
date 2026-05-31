@@ -50,6 +50,7 @@ After activation, the plugin starts working immediately:
 
 - **Dashboard**: Navigate to **OpenTracker** in the admin sidebar
 - **Tracking**: The front-end script is automatically added to all public pages
+- **External static sites**: Add approved subdomains in **OpenTracker → Settings**, then copy the generated tracker snippet into each static/custom site
 - **Uptime checks**: Run every 5 minutes via WP-Cron
 - **Reports**: Sent on the first day of each month
 
@@ -66,7 +67,25 @@ OpenTracker is designed with privacy in mind:
 - **No cookies**: The tracking script does not set any cookies.
 - **No external requests**: All data stays in your database. The only external resource is Chart.js loaded from a CDN for the admin dashboard.
 - **Admin exclusion**: Logged-in administrators are not tracked.
+- **External tracking allowlist**: Static/custom sites can only send browser tracking events from origins approved in the plugin settings.
 - **Auto-cleanup**: Raw data older than 30 days is deleted after each monthly report.
+
+## External Static Site Tracking
+
+OpenTracker can also collect analytics from static or custom subdomains while keeping the WordPress site as the single analytics collector.
+
+1. Go to **OpenTracker → Settings** in WordPress.
+2. Add one approved origin per line, for example:
+   ```text
+   https://playground.lieuwejongsma.nl
+   https://palimpsest.lieuwejongsma.nl
+   https://groningen-1926.lieuwejongsma.nl
+   ```
+3. Save the settings.
+4. Copy the generated tracker snippet from the same settings page.
+5. Paste it before the closing `</body>` tag on each approved static/custom site.
+
+The same snippet works on every approved subdomain. OpenTracker records the full page URL, so dashboard entries remain separated by host and path.
 
 ## Database Tables
 
@@ -102,9 +121,11 @@ open-tracker/
 ├── includes/
 │   ├── class-ot-database.php     # Table creation & IP anonymisation
 │   ├── class-ot-plugin.php       # Main controller
+│   ├── class-ot-external-tracking.php # External origin validation & snippet generation
 │   ├── class-ot-rest-api.php     # REST API endpoints
 │   ├── class-ot-tracker.php      # Front-end script enqueue
 │   ├── class-ot-admin.php        # Admin menu & dashboard
+│   ├── class-ot-settings.php     # Settings page for external tracking
 │   ├── class-ot-stats.php        # Query helpers for analytics data
 │   ├── class-ot-uptime.php       # WP-Cron uptime monitor
 │   └── class-ot-reports.php      # Monthly report & data cleanup
