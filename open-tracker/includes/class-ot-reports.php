@@ -151,7 +151,7 @@ class OT_Reports {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT page_url, referrer, ip_hash, user_agent, created_at
+				"SELECT page_url, referrer, referrer_type, utm_source, utm_medium, utm_campaign, utm_term, utm_content, country_code, visitor_id, session_id, screen_resolution, ip_hash, user_agent, created_at
 				FROM {$table}
 				WHERE created_at >= %s AND created_at <= %s
 				ORDER BY created_at ASC",
@@ -183,7 +183,7 @@ class OT_Reports {
 		}
 
 		// Header row.
-		fputcsv( $fp, array( 'Page URL', 'Referrer', 'IP Hash', 'User Agent', 'Date' ) );
+		fputcsv( $fp, array( 'Page URL', 'Referrer', 'Referrer Type', 'UTM Source', 'UTM Medium', 'UTM Campaign', 'UTM Term', 'UTM Content', 'Country Code', 'Visitor ID', 'Session ID', 'Screen Resolution', 'IP Hash', 'User Agent', 'Date' ) );
 
 		foreach ( $rows as $row ) {
 			fputcsv( $fp, array_values( $row ) );
@@ -262,15 +262,27 @@ class OT_Reports {
 
 		$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
 
-		// Delete heartbeats for old visits.
 		$visits_table     = $wpdb->prefix . 'ot_visits';
 		$heartbeats_table = $wpdb->prefix . 'ot_heartbeats';
+		$events_table     = $wpdb->prefix . 'ot_events';
 
+		// Delete heartbeats for old visits.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE h FROM {$heartbeats_table} h
 				INNER JOIN {$visits_table} v ON h.visit_id = v.id
+				WHERE v.created_at < %s",
+				$cutoff
+			)
+		);
+
+		// Delete events for old visits.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE e FROM {$events_table} e
+				INNER JOIN {$visits_table} v ON e.visit_id = v.id
 				WHERE v.created_at < %s",
 				$cutoff
 			)

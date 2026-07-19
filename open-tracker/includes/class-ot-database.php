@@ -18,7 +18,7 @@ class OT_Database {
 	 *
 	 * Bump this when changing table definitions so dbDelta() re-runs.
 	 */
-	const SCHEMA_VERSION = '1.0.0';
+	const SCHEMA_VERSION = '1.2.0';
 
 	/**
 	 * Create or update all custom tables.
@@ -36,13 +36,28 @@ class OT_Database {
 			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
 			page_url VARCHAR(2048) NOT NULL DEFAULT '',
 			referrer VARCHAR(2048) NOT NULL DEFAULT '',
+			referrer_type VARCHAR(20) NOT NULL DEFAULT '',
+			utm_source VARCHAR(100) NOT NULL DEFAULT '',
+			utm_medium VARCHAR(100) NOT NULL DEFAULT '',
+			utm_campaign VARCHAR(100) NOT NULL DEFAULT '',
+			utm_term VARCHAR(100) NOT NULL DEFAULT '',
+			utm_content VARCHAR(100) NOT NULL DEFAULT '',
+			country_code VARCHAR(2) NOT NULL DEFAULT '',
+			visitor_id VARCHAR(36) NOT NULL DEFAULT '',
+			session_id VARCHAR(36) NOT NULL DEFAULT '',
+			screen_resolution VARCHAR(20) NOT NULL DEFAULT '',
 			ip_hash VARCHAR(64) NOT NULL DEFAULT '',
 			user_agent VARCHAR(512) NOT NULL DEFAULT '',
 			created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
 			PRIMARY KEY  (id),
 			KEY idx_created_at (created_at),
 			KEY idx_page_url (page_url(191)),
-			KEY idx_ip_hash (ip_hash)
+			KEY idx_ip_hash (ip_hash),
+			KEY idx_referrer_type (referrer_type),
+			KEY idx_utm_campaign (utm_campaign),
+			KEY idx_country_code (country_code),
+			KEY idx_visitor_id (visitor_id),
+			KEY idx_session_id (session_id)
 		) {$charset_collate};";
 
 		// --- ot_heartbeats ---
@@ -53,6 +68,21 @@ class OT_Database {
 			created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
 			PRIMARY KEY  (id),
 			KEY idx_visit_id (visit_id)
+		) {$charset_collate};";
+
+		// --- ot_events ---
+		$table_events = $wpdb->prefix . 'ot_events';
+		$sql_events   = "CREATE TABLE {$table_events} (
+			id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			visit_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+			event_category VARCHAR(50) NOT NULL DEFAULT '',
+			event_action VARCHAR(50) NOT NULL DEFAULT '',
+			event_label VARCHAR(512) NOT NULL DEFAULT '',
+			created_at DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00',
+			PRIMARY KEY  (id),
+			KEY idx_visit_id (visit_id),
+			KEY idx_event_category (event_category),
+			KEY idx_created_at (created_at)
 		) {$charset_collate};";
 
 		// --- ot_uptime_checks ---
@@ -83,6 +113,7 @@ class OT_Database {
 
 		dbDelta( $sql_visits );
 		dbDelta( $sql_heartbeats );
+		dbDelta( $sql_events );
 		dbDelta( $sql_uptime );
 		dbDelta( $sql_reports );
 
@@ -130,6 +161,7 @@ class OT_Database {
 		$tables = array(
 			$wpdb->prefix . 'ot_visits',
 			$wpdb->prefix . 'ot_heartbeats',
+			$wpdb->prefix . 'ot_events',
 			$wpdb->prefix . 'ot_uptime_checks',
 			$wpdb->prefix . 'ot_monthly_reports',
 		);

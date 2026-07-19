@@ -263,3 +263,58 @@
 	font-size: 14px;
 	padding: 32px 16px;
 }
+
+/* ---- Channel Progress Bars ---- */
+.ot-channels-list {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.ot-channel-row {
+	display: flex;
+	flex-direction: column;
+}
+
+.ot-channel-meta {
+	display: flex;
+	justify-content: space-between;
+	font-size: 13px;
+	font-weight: 500;
+	color: #475569;
+	margin-bottom: 6px;
+}
+
+.ot-channel-bar-bg {
+	background: #f1f5f9;
+	border-radius: 4px;
+	height: 8px;
+	overflow: hidden;
+	width: 100%;
+}
+
+.ot-channel-bar-fill {
+	height: 100%;
+	border-radius: 4px;
+	transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Technology & Events ---- */
+.ot-flag {
+	font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Android Emoji", EmojiSymbols, sans-serif;
+}
+.ot-section code {
+	font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+	font-size: 12px;
+	padding: 2px 6px;
+	background: #f1f5f9;
+	border-radius: 4px;
+	color: #475569;
+}
+.ot-section a {
+	color: #2563eb;
+	transition: color 0.15s ease;
+}
+.ot-section a:hover {
+	color: #1d4ed8;
+}

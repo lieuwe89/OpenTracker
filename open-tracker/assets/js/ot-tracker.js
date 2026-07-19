@@ -44,6 +44,40 @@
 	var HEARTBEAT_INTERVAL = 15000; // 15 seconds
 
 	/**
+	 * Get cookie value by name.
+	 */
+	function getCookie( name ) {
+		var match = document.cookie.match( new RegExp( '(^| )' + name + '=([^;]+)' ) );
+		if ( match ) {
+			return match[2];
+		}
+		return '';
+	}
+
+	/**
+	 * Set a cookie.
+	 */
+	function setCookie( name, value, days ) {
+		var expires = '';
+		if ( days ) {
+			var date = new Date();
+			date.setTime( date.getTime() + ( days * 24 * 60 * 60 * 1000 ) );
+			expires = '; expires=' + date.toUTCString();
+		}
+		document.cookie = name + '=' + ( value || '' ) + expires + '; path=/; SameSite=Lax';
+	}
+
+	/**
+	 * Generate a unique UUIDv4.
+	 */
+	function generateUUID() {
+		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace( /[xy]/g, function ( c ) {
+			var r = Math.random() * 16 | 0, v = c === 'x' ? r : ( r & 0x3 | 0x8 );
+			return v.toString( 16 );
+		} );
+	}
+
+	/**
 	 * Send a POST request to the REST API.
 	 */
 	function post( endpoint, body, callback ) {
@@ -106,11 +140,28 @@
 	 * Record the initial page hit, then start heartbeat.
 	 */
 	function init() {
+		var visitorId = getCookie( 'ot_visitor' );
+		if ( ! visitorId ) {
+			visitorId = generateUUID();
+			setCookie( 'ot_visitor', visitorId, 365 );
+		}
+
+		var sessionId = getCookie( 'ot_session' );
+		if ( ! sessionId ) {
+			sessionId = generateUUID();
+			setCookie( 'ot_session', sessionId );
+		}
+
+		var screenResolution = window.screen ? window.screen.width + 'x' + window.screen.height : '';
+
 		post(
 			'hit',
 			{
 				page_url: data.pageUrl,
-				referrer: data.referrer
+				referrer: data.referrer,
+				visitor_id: visitorId,
+				session_id: sessionId,
+				screen_resolution: screenResolution
 			},
 			function ( response ) {
 				if ( response && response.visit_id ) {
@@ -119,6 +170,25 @@
 				}
 			}
 		);
+
+		// Dynamic event listener to auto-track PDF downloads.
+		document.addEventListener( 'click', function ( event ) {
+			var link = event.target.closest( 'a' );
+			if ( link && link.href ) {
+				var url = link.href;
+				var cleanUrl = url.split( '?' )[0].split( '#' )[0];
+				if ( cleanUrl.toLowerCase().endsWith( '.pdf' ) ) {
+					if ( visitId ) {
+						post( 'event', {
+							visit_id: visitId,
+							category: 'download',
+							action: 'pdf',
+							label: url
+						} );
+					}
+				}
+			}
+		} );
 
 		// Pause heartbeat when the tab is hidden.
 		document.addEventListener( 'visibilitychange', onVisibilityChange );

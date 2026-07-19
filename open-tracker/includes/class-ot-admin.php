@@ -109,16 +109,25 @@ class OT_Admin {
 
 		// Gather all data for the template.
 		$data = array(
-			'days'              => $days,
-			'total_visits'      => $stats->get_total_visits( $days ),
-			'unique_visitors'   => $stats->get_unique_visitors( $days ),
-			'avg_retention'     => $stats->get_avg_retention( $days ),
-			'avg_retention_fmt' => OT_Stats::format_duration( $stats->get_avg_retention( $days ) ),
-			'uptime_pct'        => $stats->get_uptime_percentage( 7 ),
-			'top_pages'         => $stats->get_top_pages( $days ),
-			'top_referrers'     => $stats->get_top_referrers( $days ),
-			'uptime_timeline'   => $stats->get_uptime_timeline(),
-			'recent_downtime'   => $stats->get_recent_downtime(),
+			'days'                 => $days,
+			'total_visits'         => $stats->get_total_visits( $days ),
+			'unique_visitors'      => $stats->get_unique_visitors( $days ),
+			'avg_retention'        => $stats->get_avg_retention( $days ),
+			'avg_retention_fmt'    => OT_Stats::format_duration( $stats->get_avg_retention( $days ) ),
+			'uptime_pct'           => $stats->get_uptime_percentage( 7 ),
+			'top_pages'            => $stats->get_top_pages( $days ),
+			'top_referrers'        => $stats->get_top_referrers( $days ),
+			'top_channels'         => $stats->get_top_channels( $days ),
+			'top_countries'        => $stats->get_top_countries( $days, 10 ),
+			'top_campaigns'        => $stats->get_top_campaigns( $days, 10 ),
+			'bounce_rate'          => $stats->get_global_bounce_rate( $days ),
+			'session_stats'        => $stats->get_session_stats( $days ),
+			'new_vs_returning'     => $stats->get_new_vs_returning( $days ),
+			'top_devices'          => $stats->get_top_devices( $days ),
+			'top_resolutions'      => $stats->get_top_screen_resolutions( $days, 10 ),
+			'top_pdf_downloads'    => $stats->get_top_pdf_downloads( $days, 10 ),
+			'uptime_timeline'      => $stats->get_uptime_timeline(),
+			'recent_downtime'      => $stats->get_recent_downtime(),
 		);
 
 		include OT_PLUGIN_DIR . 'templates/dashboard.php';

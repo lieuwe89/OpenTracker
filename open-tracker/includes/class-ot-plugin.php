@@ -17,6 +17,11 @@ class OT_Plugin {
 	 * Boot all components.
 	 */
 	public function __construct() {
+		// Run DB upgrades if needed.
+		if ( get_option( 'ot_schema_version' ) !== OT_Database::SCHEMA_VERSION ) {
+			OT_Database::install();
+		}
+
 		// Front-end tracking (public pages only).
 		if ( ! is_admin() ) {
 			new OT_Tracker();
