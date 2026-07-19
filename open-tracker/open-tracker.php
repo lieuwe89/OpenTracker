@@ -3,7 +3,7 @@
  * Plugin Name: OpenTracker
  * Plugin URI:  https://github.com/lieuwe89/OpenTracker
  * Description: Local analytics & uptime monitor. Tracks visits, page views, user retention, and website uptime — all data stored locally.
- * Version:     1.1.0
+ * Version:     1.2.0
  * Author:      Lieuwe Jongsma
  * License:     GPL-2.0-or-later
  * Text Domain: open-tracker
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // --- Constants ---
-define( 'OT_VERSION', '1.1.0' );
+define( 'OT_VERSION', '1.2.0' );
 define( 'OT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
